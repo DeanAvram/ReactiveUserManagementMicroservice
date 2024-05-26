@@ -3,6 +3,7 @@ package cloud.user.reactiveusermanagementmicroservice.services;
 import cloud.user.reactiveusermanagementmicroservice.boundries.UserBoundary;
 import cloud.user.reactiveusermanagementmicroservice.entities.UserEntity;
 import org.springframework.stereotype.Service;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.text.SimpleDateFormat;
@@ -17,7 +18,23 @@ public class UserServiceImplementation implements UserService {
             this.users = users;
         }
 
-        @Override
+
+    @Override
+    public Mono<UserBoundary> getUser(String email, String password) {
+        return null;
+    }
+
+    @Override
+    public Flux<UserBoundary> getUsersByFilters(String email, String criteria, String value) {
+        return null;
+    }
+
+    @Override
+    public Flux<UserBoundary> getAllUsers() {
+        return null;
+    }
+
+    @Override
         public Mono<UserBoundary> createUser(UserBoundary userBoundary) {
             return Mono.just(userBoundary)
                     .map(user -> {
@@ -28,17 +45,23 @@ public class UserServiceImplementation implements UserService {
                     .map(this::convertToBoundary);
         }
 
+    @Override
+    public Mono<Void> updateUser(String email, String password, UserBoundary userBoundary) {
+        return null;
+    }
 
-        private UserBoundary convertToBoundary(UserEntity userEntity){
+    @Override
+    public Mono<Void> deleteAllUsers() {
+        return this.users.deleteAll();
+    }
+
+
+    private UserBoundary convertToBoundary(UserEntity userEntity){
              UserBoundary userBoundary = new UserBoundary();
              userBoundary.setEmail(userEntity.getEmail());
              userBoundary.setName(userEntity.getName());
              userBoundary.setPassword(userEntity.getPassword());
-             try {
-                 //userBoundary.setBirthdate(new SimpleDateFormat("dd/MM/yyyy").parse(userEntity.getBirthdate()));
-             }catch (Exception e) {
-                 //e.printStackTrace();
-             }
+             userBoundary.setBirthdate(userEntity.getBirthdate());
              userBoundary.setRole(userEntity.getRole());
              userBoundary.setAddress(userEntity.getAddress());
              return userBoundary;
@@ -49,7 +72,7 @@ public class UserServiceImplementation implements UserService {
              userEntity.setEmail(userBoundary.getEmail());
              userEntity.setName(userBoundary.getName());
              userEntity.setPassword(userBoundary.getPassword());
-             //userEntity.setBirthdate(userBoundary.getBirthdate().toString());
+             userEntity.setBirthdate(userBoundary.getBirthdate());
              userEntity.setRole(userBoundary.getRole());
              userEntity.setAddress(userBoundary.getAddress());
              return userEntity;
