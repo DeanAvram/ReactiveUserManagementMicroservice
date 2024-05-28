@@ -2,21 +2,24 @@ package cloud.user.reactiveusermanagementmicroservice.services;
 
 import cloud.user.reactiveusermanagementmicroservice.boundries.UserBoundary;
 import cloud.user.reactiveusermanagementmicroservice.entities.UserEntity;
+import cloud.user.reactiveusermanagementmicroservice.exceptions.InvalidDateException;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import java.text.SimpleDateFormat;
-import java.util.Date;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.Optional;
 
 @Service
 public class UserServiceImplementation implements UserService {
 
-        private ReactiveUserCrud users;
+    private static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
+    private ReactiveUserCrud users;
 
-        public UserServiceImplementation(ReactiveUserCrud users) {
-            this.users = users;
-        }
+   public UserServiceImplementation(ReactiveUserCrud users) {
+       this.users = users;
+   }
 
 
     @Override
@@ -31,19 +34,20 @@ public class UserServiceImplementation implements UserService {
 
     @Override
     public Flux<UserBoundary> getAllUsers() {
-        return null;
+        return users.findAll()
+                .map(this::convertToBoundary)
+                .map(Optional::get);
     }
 
     @Override
-        public Mono<UserBoundary> createUser(UserBoundary userBoundary) {
-            return Mono.just(userBoundary)
-                    .map(user -> {
-                        UserEntity entity = this.convertToEntity(user);
-                        return entity;
-                    })
-                    .flatMap(this.users::save)
-                    .map(this::convertToBoundary);
-        }
+    public Mono<UserBoundary> createUser(UserBoundary userBoundary) {
+        return Mono.just(userBoundary)
+                .map(user -> convertToEntity(user)
+                        .orElseThrow(() -> new InvalidDateException("Invalid date format. Please use dd-mm-yyyy format.")))
+                .flatMap(users::save)
+                .map(this::convertToBoundary)
+                .map(Optional::get);
+    }
 
     @Override
     public Mono<Void> updateUser(String email, String password, UserBoundary userBoundary) {
@@ -56,25 +60,40 @@ public class UserServiceImplementation implements UserService {
     }
 
 
-    private UserBoundary convertToBoundary(UserEntity userEntity){
+    private Optional<UserBoundary> convertToBoundary(UserEntity userEntity){
              UserBoundary userBoundary = new UserBoundary();
              userBoundary.setEmail(userEntity.getEmail());
              userBoundary.setName(userEntity.getName());
              userBoundary.setPassword(userEntity.getPassword());
-             userBoundary.setBirthdate(userEntity.getBirthdate());
+             userBoundary.setBirthdate(userEntity.getBirthdate().format(formatter));
              userBoundary.setRole(userEntity.getRole());
              userBoundary.setAddress(userEntity.getAddress());
-             return userBoundary;
+             return Optional.of(userBoundary);
         }
 
-        private UserEntity convertToEntity(UserBoundary userBoundary) {
+        private Optional<UserEntity> convertToEntity(UserBoundary userBoundary){
              UserEntity userEntity = new UserEntity();
              userEntity.setEmail(userBoundary.getEmail());
              userEntity.setName(userBoundary.getName());
              userEntity.setPassword(userBoundary.getPassword());
-             userEntity.setBirthdate(userBoundary.getBirthdate());
+             try {
+                 userEntity.setBirthdate(convertToDate(userBoundary.getBirthdate()));
+             }
+             catch (InvalidDateException e){
+                 return Optional.empty();
+             }
              userEntity.setRole(userBoundary.getRole());
              userEntity.setAddress(userBoundary.getAddress());
-             return userEntity;
+             return Optional.of(userEntity);
+        }
+
+        private LocalDate convertToDate(String dateString) throws InvalidDateException {
+            try {
+                return LocalDate.parse(dateString, formatter);
+            }
+            catch (Exception e){
+                throw new InvalidDateException("Invalid date format.");
+            }
+
         }
 }

@@ -5,6 +5,8 @@ import cloud.user.reactiveusermanagementmicroservice.boundries.AddressBoundary;
 import cloud.user.reactiveusermanagementmicroservice.boundries.NameBoundary;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
+
+import java.time.LocalDate;
 import java.util.Date;
 
 @Document(collection = "USERS")
@@ -12,7 +14,7 @@ public class UserEntity {
     @Id private String email;
     private NameBoundary name;
     private String password;
-    private Date birthdate;
+    private LocalDate birthdate;
     private RolesEnum role;
     private AddressBoundary address;
 
@@ -44,11 +46,11 @@ public class UserEntity {
         this.password = password;
     }
 
-    public Date getBirthdate() {
+    public LocalDate getBirthdate() {
         return birthdate;
     }
 
-    public void setBirthdate(Date birthdate) {
+    public void setBirthdate(LocalDate birthdate) {
         this.birthdate = birthdate;
     }
 

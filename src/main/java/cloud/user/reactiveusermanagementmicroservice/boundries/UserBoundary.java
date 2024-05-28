@@ -7,7 +7,7 @@ public class UserBoundary {
     private String email;
     private NameBoundary name;
     private String password;
-    private Date birthdate;
+    private String birthdate;
     private RolesEnum role;
     private AddressBoundary address;
 
@@ -39,11 +39,11 @@ public class UserBoundary {
         this.password = password;
     }
 
-    public Date getBirthdate() {
+    public String getBirthdate() {
         return birthdate;
     }
 
-    public void setBirthdate(Date birthdate) {
+    public void setBirthdate(String birthdate) {
         this.birthdate = birthdate;
     }
 
