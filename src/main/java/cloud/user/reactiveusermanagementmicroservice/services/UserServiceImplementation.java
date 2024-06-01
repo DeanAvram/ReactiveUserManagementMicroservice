@@ -2,6 +2,7 @@ package cloud.user.reactiveusermanagementmicroservice.services;
 
 import cloud.user.reactiveusermanagementmicroservice.boundries.UserBoundary;
 import cloud.user.reactiveusermanagementmicroservice.entities.UserEntity;
+import cloud.user.reactiveusermanagementmicroservice.exceptions.InvalidCriteriaException;
 import cloud.user.reactiveusermanagementmicroservice.exceptions.InvalidDateException;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
@@ -28,8 +29,13 @@ public class UserServiceImplementation implements UserService {
     }
 
     @Override
-    public Flux<UserBoundary> getUsersByFilters(String email, String criteria, String value) {
-        return null;
+    public Flux<UserBoundary> getUsersByCriteria(String criteria, String value) {
+        return switch (criteria) {
+            case ("email") -> users.findByEmail(value).map(this::convertToBoundary).map(Optional::get);
+            case ("country") -> users.findAllByAddress_Country(value).map(this::convertToBoundary).map(Optional::get);
+            case ("last") -> users.findAllByName_Last(value).map(this::convertToBoundary).map(Optional::get);
+            default -> throw new InvalidCriteriaException("Invalid criteria. Please use email, country or last.");
+        };
     }
 
     @Override
@@ -79,7 +85,7 @@ public class UserServiceImplementation implements UserService {
              UserBoundary userBoundary = new UserBoundary();
              userBoundary.setEmail(userEntity.getEmail());
              userBoundary.setName(userEntity.getName());
-             userBoundary.setPassword(userEntity.getPassword());
+             userBoundary.setPassword("");
              userBoundary.setBirthdate(userEntity.getBirthdate().format(formatter));
              userBoundary.setRole(userEntity.getRole());
              userBoundary.setAddress(userEntity.getAddress());
