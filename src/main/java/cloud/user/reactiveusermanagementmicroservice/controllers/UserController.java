@@ -33,6 +33,14 @@ public class UserController {
         return this.userService.getAllUsers();
     }
 
+    @GetMapping(
+            path = {"/{criteria}/{value}"},
+            produces = {MediaType.TEXT_EVENT_STREAM_VALUE}
+    )
+    public Mono<UserBoundary> getUsersByFilters(@PathVariable("criteria") String criteria, @PathVariable("value") String value){
+        return null;
+    }
+
     @PostMapping(
             produces = {MediaType.APPLICATION_JSON_VALUE},
             consumes = {MediaType.APPLICATION_JSON_VALUE}
@@ -40,6 +48,14 @@ public class UserController {
     public Mono<UserBoundary> createUser(
             @RequestBody UserBoundary user){
         return this.userService.createUser(user);
+    }
+
+    @PutMapping("/{email}")
+    public Mono<Void> updateUser(
+            @PathVariable String email,
+            @RequestParam String password,
+            @RequestBody UserBoundary userBoundary) {
+        return userService.updateUser(email, password, userBoundary);
     }
 
     @DeleteMapping

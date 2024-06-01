@@ -51,8 +51,23 @@ public class UserServiceImplementation implements UserService {
 
     @Override
     public Mono<Void> updateUser(String email, String password, UserBoundary userBoundary) {
-        return null;
-    }
+       return this.users
+               .findById(email)
+               .map(userEntity -> {
+                   if (userBoundary.getPassword().equals(password)) {
+                       userBoundary.setEmail(userBoundary.getEmail());
+                       userBoundary.setPassword(userBoundary.getPassword());
+                   }
+                   return userEntity;
+               })
+               .flatMap(this.users::save)
+               .log()
+               .then();
+
+   }
+
+
+
 
     @Override
     public Mono<Void> deleteAllUsers() {
