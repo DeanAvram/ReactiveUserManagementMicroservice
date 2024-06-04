@@ -1,7 +1,7 @@
 package cloud.user.reactiveusermanagementmicroservice.controllers;
 
 import cloud.user.reactiveusermanagementmicroservice.boundries.UserBoundary;
-import cloud.user.reactiveusermanagementmicroservice.exceptions.InvalidCriteriaException;
+import cloud.user.reactiveusermanagementmicroservice.exceptions.GeneralBadRequestException;
 import cloud.user.reactiveusermanagementmicroservice.services.UserService;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
@@ -36,7 +36,7 @@ public class UserController {
             return this.userService.getAllUsers();
         if (criteria != null && value != null)
             return this.userService.getUsersByCriteria(criteria, value);
-        throw new InvalidCriteriaException("Provide both criteria and value or none.");
+        throw new GeneralBadRequestException("Provide both criteria and value or none.");
     }
 
     @PostMapping(

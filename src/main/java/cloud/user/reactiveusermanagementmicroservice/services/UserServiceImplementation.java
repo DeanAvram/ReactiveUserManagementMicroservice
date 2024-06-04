@@ -28,7 +28,7 @@ public class UserServiceImplementation implements UserService {
     public Mono<UserBoundary> getUser(String email, String password) {
         return this.users.findById(email)
                 .map(this::convertToBoundary)
-                .switchIfEmpty(Mono.error(new UserNotFoundException("User with email: " + email + " not found.")))
+                .switchIfEmpty(Mono.error(new GeneralBadRequestException("User with email: " + email + " not found.")))
                 .filter(user -> user.getPassword().equals(password))
                 .switchIfEmpty(Mono.error(new WrongPasswordException("Wrong password.")))
                 .map(userBoundary -> {
@@ -55,10 +55,10 @@ public class UserServiceImplementation implements UserService {
                     yield users.findAllByBirthdateAfter(LocalDate.now().minusYears(maxAge));
                 }
                 default ->
-                        throw new InvalidCriteriaException("Invalid criteria. Please use email, country, last, minimumAge or maximumAge.");
+                        throw new GeneralBadRequestException("Invalid criteria. Please use email, country, last, minimumAge or maximumAge.");
             };
         } catch (NumberFormatException e) {
-            throw new InvalidCriteriaException("Invalid value for age criteria. Please provide a valid integer.");
+            throw new GeneralBadRequestException("Invalid value for age criteria. Please provide a valid integer.");
         }
 
         return fluxEntity.map(this::convertToBoundary).map(userBoundary -> {
@@ -84,7 +84,7 @@ public class UserServiceImplementation implements UserService {
         return entity.hasElement()
                 .flatMap(exists -> {
                     if (exists) {
-                        return Mono.error(new UserAlreadyExistsException("User with email: " + userBoundary.getEmail() + " already exists."));
+                        return Mono.error(new GeneralBadRequestException("User with email: " + userBoundary.getEmail() + " already exists."));
                     }
                     return Mono.just(userBoundary);
                 })
@@ -95,19 +95,34 @@ public class UserServiceImplementation implements UserService {
 
     @Override
     public Mono<Void> updateUser(String email, String password, UserBoundary userBoundary) {
-        return this.users
-                .findById(email)
+        return this.users.findById(email)
                 .map(userEntity -> {
-                    if (userBoundary.getPassword().equals(password)) {
-                        userBoundary.setEmail(userBoundary.getEmail());
-                        userBoundary.setPassword(userBoundary.getPassword());
+                    if (userBoundary.getPassword() != null)
+                        userEntity.setPassword(userBoundary.getPassword());
+                    if (userBoundary.getName() != null) {
+                        if (userBoundary.getName().getFirst() != null)
+                            userEntity.getName().setFirst(userBoundary.getName().getFirst());
+                        if (userBoundary.getName().getLast() != null)
+                            userEntity.getName().setLast(userBoundary.getName().getLast());
+                    }
+                    if (userBoundary.getBirthdate() != null){
+                        userEntity.setBirthdate(convertToDate(userBoundary.getBirthdate()));
+                    }
+                    if (userBoundary.getRole() != null)
+                        userEntity.setRole(userBoundary.getRole());
+                    if (userBoundary.getAddress() != null) {
+                        if (userBoundary.getAddress().getCountry() != null)
+                            userEntity.getAddress().setCountry(userBoundary.getAddress().getCountry());
+                        if (userBoundary.getAddress().getCity() != null)
+                            userEntity.getAddress().setCity(userBoundary.getAddress().getCity());
+                        if (userBoundary.getAddress().getZip() != null)
+                            userEntity.getAddress().setZip(userBoundary.getAddress().getZip());
                     }
                     return userEntity;
                 })
-                .flatMap(this.users::save)
-                .log()
-                .then();
 
+                .flatMap(this.users::save)
+                .then();
     }
 
 
@@ -130,26 +145,26 @@ public class UserServiceImplementation implements UserService {
     private UserEntity convertToEntity(UserBoundary userBoundary) {
         UserEntity userEntity = new UserEntity();
         if (!isValidEmail(userBoundary.getEmail())) {
-            throw new InvalidMailException("Invalid email format.");
+            throw new GeneralBadRequestException("Invalid email format.");
         }
         userEntity.setEmail(userBoundary.getEmail());
         userEntity.setName(userBoundary.getName());
         userEntity.setPassword(userBoundary.getPassword());
         try {
             userEntity.setBirthdate(convertToDate(userBoundary.getBirthdate()));
-        } catch (InvalidDateException e) {
-            throw new InvalidDateException("Invalid date format. Please use dd-mm-yyyy format.");
+        } catch (GeneralBadRequestException e) {
+            throw new GeneralBadRequestException("Invalid date format. Please use dd-mm-yyyy format.");
         }
         userEntity.setRole(userBoundary.getRole());
         userEntity.setAddress(userBoundary.getAddress());
         return userEntity;
     }
 
-    private LocalDate convertToDate(String dateString) throws InvalidDateException {
+    private LocalDate convertToDate(String dateString) throws GeneralBadRequestException {
         try {
             return LocalDate.parse(dateString, formatter);
         } catch (Exception e) {
-            throw new InvalidDateException("Invalid date format.");
+            throw new GeneralBadRequestException("Invalid date format. please use dd-mm-yyyy format.");
         }
 
     }
