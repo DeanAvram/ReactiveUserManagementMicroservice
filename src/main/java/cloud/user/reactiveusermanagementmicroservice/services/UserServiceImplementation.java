@@ -26,7 +26,8 @@ public class UserServiceImplementation implements UserService {
 
     @Override
     public Mono<UserBoundary> getUser(String email, String password) {
-        return this.users.findById(email).map(this::convertToBoundary)
+        return this.users.findById(email)
+                .map(this::convertToBoundary)
                 .switchIfEmpty(Mono.error(new UserNotFoundException("User with email: " + email + " not found.")))
                 .filter(user -> user.getPassword().equals(password))
                 .switchIfEmpty(Mono.error(new WrongPasswordException("Wrong password.")))
@@ -79,7 +80,14 @@ public class UserServiceImplementation implements UserService {
 
     @Override
     public Mono<UserBoundary> createUser(UserBoundary userBoundary) {
-        return Mono.just(userBoundary)
+        Mono<UserEntity> entity = this.users.findById(userBoundary.getEmail());
+        return entity.hasElement()
+                .flatMap(exists -> {
+                    if (exists) {
+                        return Mono.error(new UserAlreadyExistsException("User with email: " + userBoundary.getEmail() + " already exists."));
+                    }
+                    return Mono.just(userBoundary);
+                })
                 .map(this::convertToEntity)
                 .flatMap(users::save)
                 .map(this::convertToBoundary);
