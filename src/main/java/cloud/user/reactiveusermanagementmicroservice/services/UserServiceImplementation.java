@@ -30,26 +30,40 @@ public class UserServiceImplementation implements UserService {
        return this.users.findById(email).map(this::convertToBoundary).map(Optional::get)
                .switchIfEmpty(Mono.error(new UserNotFoundException("User with email: " + email + " not found.")))
                .filter(user -> user.getPassword().equals(password))
-               .map(this::removePassword)
-               .switchIfEmpty(Mono.error(new WrongPasswordException("Wrong password.")));
+               .switchIfEmpty(Mono.error(new WrongPasswordException("Wrong password.")))
+               .map(userBoundary -> {
+                   userBoundary.setPassword(null);
+                   return userBoundary;});
+
     }
 
     @Override
     public Flux<UserBoundary> getUsersByCriteria(String criteria, String value) {
-        return switch (criteria) {
-            case ("email") -> users.findByEmail(value).map(this::convertToBoundary).map(Optional::get).map(this::removePassword);
-            case ("country") -> users.findAllByAddress_Country(value).map(this::convertToBoundary).map(Optional::get).map(this::removePassword);
-            case ("last") -> users.findAllByName_Last(value).map(this::convertToBoundary).map(Optional::get).map(this::removePassword);
-            default -> throw new InvalidCriteriaException("Invalid criteria. Please use email, country or last.");
-        };
+       Flux<UserEntity> fluxEntity = switch (criteria) {
+           case ("email") -> users.findByEmail(value);
+           case ("country") -> users.findAllByAddress_Country(value);
+           case ("last") -> users.findAllByName_Last(value);
+           case ("minimumAge") -> users.findAllByBirthdateBefore(LocalDate.now().minusYears(Integer.parseInt(value)));
+           case ("maximumAge") -> users.findAllByBirthdateAfter(LocalDate.now().minusYears(Integer.parseInt(value)));
+           default ->
+                   throw new InvalidCriteriaException("Invalid criteria. Please use email, country, last, minimumAge or maximumAge.");
+       };
+        return fluxEntity.map(this::convertToBoundary).map(userBoundary -> {
+           UserBoundary boundary = userBoundary.get();
+           boundary.setPassword(null);
+           return boundary;
+       });
     }
 
     @Override
     public Flux<UserBoundary> getAllUsers() {
         return users.findAll()
                 .map(this::convertToBoundary)
-                .map(Optional::get)
-                .map(this::removePassword);
+                .map(userBoundary -> {
+                    UserBoundary boundary = userBoundary.get();
+                    boundary.setPassword(null);
+                    return boundary;
+                });
     }
 
     @Override
@@ -125,10 +139,5 @@ public class UserServiceImplementation implements UserService {
                 throw new InvalidDateException("Invalid date format.");
             }
 
-        }
-
-        private UserBoundary removePassword(UserBoundary userBoundary){
-            userBoundary.setPassword(null);
-            return userBoundary;
         }
 }
