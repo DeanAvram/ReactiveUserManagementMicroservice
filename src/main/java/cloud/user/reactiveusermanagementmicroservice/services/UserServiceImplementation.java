@@ -4,6 +4,8 @@ import cloud.user.reactiveusermanagementmicroservice.boundries.UserBoundary;
 import cloud.user.reactiveusermanagementmicroservice.entities.UserEntity;
 import cloud.user.reactiveusermanagementmicroservice.exceptions.InvalidCriteriaException;
 import cloud.user.reactiveusermanagementmicroservice.exceptions.InvalidDateException;
+import cloud.user.reactiveusermanagementmicroservice.exceptions.UserNotFoundException;
+import cloud.user.reactiveusermanagementmicroservice.exceptions.WrongPasswordException;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -25,15 +27,19 @@ public class UserServiceImplementation implements UserService {
 
     @Override
     public Mono<UserBoundary> getUser(String email, String password) {
-        return null;
+       return this.users.findById(email).map(this::convertToBoundary).map(Optional::get)
+               .switchIfEmpty(Mono.error(new UserNotFoundException("User with email: " + email + " not found.")))
+               .filter(user -> user.getPassword().equals(password))
+               .map(this::removePassword)
+               .switchIfEmpty(Mono.error(new WrongPasswordException("Wrong password.")));
     }
 
     @Override
     public Flux<UserBoundary> getUsersByCriteria(String criteria, String value) {
         return switch (criteria) {
-            case ("email") -> users.findByEmail(value).map(this::convertToBoundary).map(Optional::get);
-            case ("country") -> users.findAllByAddress_Country(value).map(this::convertToBoundary).map(Optional::get);
-            case ("last") -> users.findAllByName_Last(value).map(this::convertToBoundary).map(Optional::get);
+            case ("email") -> users.findByEmail(value).map(this::convertToBoundary).map(Optional::get).map(this::removePassword);
+            case ("country") -> users.findAllByAddress_Country(value).map(this::convertToBoundary).map(Optional::get).map(this::removePassword);
+            case ("last") -> users.findAllByName_Last(value).map(this::convertToBoundary).map(Optional::get).map(this::removePassword);
             default -> throw new InvalidCriteriaException("Invalid criteria. Please use email, country or last.");
         };
     }
@@ -42,7 +48,8 @@ public class UserServiceImplementation implements UserService {
     public Flux<UserBoundary> getAllUsers() {
         return users.findAll()
                 .map(this::convertToBoundary)
-                .map(Optional::get);
+                .map(Optional::get)
+                .map(this::removePassword);
     }
 
     @Override
@@ -82,18 +89,20 @@ public class UserServiceImplementation implements UserService {
 
 
     private Optional<UserBoundary> convertToBoundary(UserEntity userEntity){
-             UserBoundary userBoundary = new UserBoundary();
-             userBoundary.setEmail(userEntity.getEmail());
-             userBoundary.setName(userEntity.getName());
-             userBoundary.setPassword("");
-             userBoundary.setBirthdate(userEntity.getBirthdate().format(formatter));
-             userBoundary.setRole(userEntity.getRole());
-             userBoundary.setAddress(userEntity.getAddress());
-             return Optional.of(userBoundary);
-        }
+       System.out.println("convertToBoundary" + userEntity.getPassword());
+       UserBoundary userBoundary = new UserBoundary();
+       userBoundary.setEmail(userEntity.getEmail());
+       userBoundary.setName(userEntity.getName());
+       userBoundary.setPassword(userEntity.getPassword());
+       userBoundary.setBirthdate(userEntity.getBirthdate().format(formatter));
+       userBoundary.setRole(userEntity.getRole());
+       userBoundary.setAddress(userEntity.getAddress());
+       return Optional.of(userBoundary);
+   }
 
-        private Optional<UserEntity> convertToEntity(UserBoundary userBoundary){
-             UserEntity userEntity = new UserEntity();
+   private Optional<UserEntity> convertToEntity(UserBoundary userBoundary){
+            System.out.println("convertToEntity" + userBoundary.getPassword());
+            UserEntity userEntity = new UserEntity();
              userEntity.setEmail(userBoundary.getEmail());
              userEntity.setName(userBoundary.getName());
              userEntity.setPassword(userBoundary.getPassword());
@@ -116,5 +125,10 @@ public class UserServiceImplementation implements UserService {
                 throw new InvalidDateException("Invalid date format.");
             }
 
+        }
+
+        private UserBoundary removePassword(UserBoundary userBoundary){
+            userBoundary.setPassword(null);
+            return userBoundary;
         }
 }
