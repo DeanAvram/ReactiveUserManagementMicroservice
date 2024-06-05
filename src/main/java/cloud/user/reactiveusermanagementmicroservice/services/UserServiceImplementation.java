@@ -1,8 +1,10 @@
 package cloud.user.reactiveusermanagementmicroservice.services;
 
+import cloud.user.reactiveusermanagementmicroservice.boundries.RolesEnum;
 import cloud.user.reactiveusermanagementmicroservice.boundries.UserBoundary;
 import cloud.user.reactiveusermanagementmicroservice.entities.UserEntity;
 import cloud.user.reactiveusermanagementmicroservice.exceptions.*;
+import org.apache.commons.lang3.EnumUtils;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -144,19 +146,37 @@ public class UserServiceImplementation implements UserService {
 
     private UserEntity convertToEntity(UserBoundary userBoundary) {
         UserEntity userEntity = new UserEntity();
-        if (!isValidEmail(userBoundary.getEmail())) {
+        if (userBoundary.getEmail() == null)
+            throw new GeneralBadRequestException("Email must be provided.");
+        if (!isValidEmail(userBoundary.getEmail()))
             throw new GeneralBadRequestException("Invalid email format.");
-        }
         userEntity.setEmail(userBoundary.getEmail());
-        userEntity.setName(userBoundary.getName());
+        if (userBoundary.getPassword() == null)
+            throw new GeneralBadRequestException("Password must be provided.");
+        if (userBoundary.getPassword().length() < 3)
+            throw new GeneralBadRequestException("Password must be at least 3 characters long.");
         userEntity.setPassword(userBoundary.getPassword());
+        if (userBoundary.getName() == null || userBoundary.getName().getFirst() == null || userBoundary.getName().getLast() == null)
+            throw new GeneralBadRequestException("Name must have first and last name.");
+        userEntity.setName(userBoundary.getName());
+        if (userBoundary.getBirthdate() == null)
+            throw new GeneralBadRequestException("Birthdate must be provided.");
         try {
             userEntity.setBirthdate(convertToDate(userBoundary.getBirthdate()));
         } catch (GeneralBadRequestException e) {
             throw new GeneralBadRequestException("Invalid date format. Please use dd-mm-yyyy format.");
         }
+        if (userBoundary.getRole() == null)
+            throw new GeneralBadRequestException("Role must be provided.");
         userEntity.setRole(userBoundary.getRole());
+        if (userBoundary.getAddress() == null)
+            throw new GeneralBadRequestException("Address must be provided.");
+        if (userBoundary.getAddress().getCountry() == null || userBoundary.getAddress().getCity() == null || userBoundary.getAddress().getZip() == null)
+            throw new GeneralBadRequestException("Address must have a country, city and a zip.");
+        if (userBoundary.getAddress().getCountry().length() != 2)
+            throw new GeneralBadRequestException("Country must be a 2 letter abbreviation.");
         userEntity.setAddress(userBoundary.getAddress());
+
         return userEntity;
     }
 
