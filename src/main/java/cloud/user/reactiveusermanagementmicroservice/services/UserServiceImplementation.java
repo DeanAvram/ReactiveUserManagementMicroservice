@@ -1,10 +1,8 @@
 package cloud.user.reactiveusermanagementmicroservice.services;
 
-import cloud.user.reactiveusermanagementmicroservice.boundries.RolesEnum;
 import cloud.user.reactiveusermanagementmicroservice.boundries.UserBoundary;
 import cloud.user.reactiveusermanagementmicroservice.entities.UserEntity;
 import cloud.user.reactiveusermanagementmicroservice.exceptions.*;
-import org.apache.commons.lang3.EnumUtils;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
