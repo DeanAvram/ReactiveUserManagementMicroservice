@@ -1,13 +1,12 @@
 package cloud.user.reactiveusermanagementmicroservice.entities;
 
-import cloud.user.reactiveusermanagementmicroservice.boundries.RolesEnum;
 import cloud.user.reactiveusermanagementmicroservice.boundries.AddressBoundary;
 import cloud.user.reactiveusermanagementmicroservice.boundries.NameBoundary;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDate;
-import java.util.Date;
+import java.util.List;
 
 @Document(collection = "USERS")
 public class UserEntity {
@@ -15,7 +14,7 @@ public class UserEntity {
     private NameBoundary name;
     private String password;
     private LocalDate birthdate;
-    private RolesEnum role;
+    private List<String> role;
     private AddressBoundary address;
 
     public UserEntity() {
@@ -54,11 +53,11 @@ public class UserEntity {
         this.birthdate = birthdate;
     }
 
-    public RolesEnum getRole() {
+    public List<String> getRole() {
         return role;
     }
 
-    public void setRole(RolesEnum role) {
+    public void setRole(List<String> role) {
         this.role = role;
     }
 

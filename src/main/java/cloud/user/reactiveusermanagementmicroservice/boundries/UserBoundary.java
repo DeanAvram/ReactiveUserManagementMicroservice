@@ -1,8 +1,6 @@
 package cloud.user.reactiveusermanagementmicroservice.boundries;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-
-import java.util.Date;
+import java.util.List;
 
 public class UserBoundary {
 
@@ -10,7 +8,7 @@ public class UserBoundary {
     private NameBoundary name;
     private String password;
     private String birthdate;
-    private RolesEnum role;
+    private List<String> role;
     private AddressBoundary address;
 
     public UserBoundary() {
@@ -49,11 +47,11 @@ public class UserBoundary {
         this.birthdate = birthdate;
     }
 
-    public RolesEnum getRole() {
+    public List<String> getRole() {
         return role;
     }
 
-    public void setRole(RolesEnum role) {
+    public void setRole(List<String> role) {
         this.role = role;
     }
 
