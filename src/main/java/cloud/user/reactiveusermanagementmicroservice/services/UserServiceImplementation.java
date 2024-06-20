@@ -28,9 +28,9 @@ public class UserServiceImplementation implements UserService {
     public Mono<UserBoundary> getUser(String email, String password) {
         return this.users.findById(email)
                 .map(this::convertToBoundary)
-                .switchIfEmpty(Mono.error(new GeneralBadRequestException("User with email: " + email + " not found.")))
+                .switchIfEmpty(Mono.error(new GeneralBadRequestException("User not found or wrong password provided")))
                 .filter(user -> user.getPassword().equals(password))
-                .switchIfEmpty(Mono.error(new WrongPasswordException("Wrong password.")))
+                .switchIfEmpty(Mono.error(new GeneralBadRequestException("User not found or wrong password provided")))
                 .map(userBoundary -> {
                     userBoundary.setPassword(null);
                     return userBoundary;
