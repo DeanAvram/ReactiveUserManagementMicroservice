@@ -90,7 +90,11 @@ public class UserServiceImplementation implements UserService {
                 })
                 .map(this::convertToEntity)
                 .flatMap(users::save)
-                .map(this::convertToBoundary);
+                .map(this::convertToBoundary)
+                .map(user -> {
+                    user.setPassword(null);
+                    return user;
+                });
     }
 
     @Override
