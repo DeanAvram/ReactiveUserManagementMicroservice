@@ -50,8 +50,8 @@ public class UserController {
 
     @PutMapping("/{email}")
     public Mono<Void> updateUser(
-            @PathVariable String email,
-            @RequestParam String password,
+            @PathVariable(name = "email") String email,
+            @RequestParam(name = "password") String password,
             @RequestBody UserBoundary userBoundary) {
         return userService.updateUser(email, password, userBoundary);
     }
